@@ -1,0 +1,277 @@
+/* PATH: client/src/app/globals.css */
+@import "tailwindcss";
+
+:root {
+    --bg: #0b0f14;
+    --bg2: #0d1117;
+    --bg3: #111923;
+    --border: #1e2a38;
+    --border2: #263545;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #4a6080;
+    --text4: #2d3d50;
+    --blue: #1a6cff;
+    --blue-dim: #0f2040;
+    --red: #ef4444;
+    --red-dim: #3b0f0f;
+    --green: #22c55e;
+    --green-dim: #052e16;
+    --amber: #f59e0b;
+    --amber-dim: #3d1c08;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    height: 100%;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 2px;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+@keyframes fadein {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fadein {
+    animation: fadein 0.18s ease both;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, .4);
+    }
+
+    70% {
+        opacity: .8;
+        box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
+    }
+}
+
+.pulse-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes newrow {
+    from {
+        background: rgba(26, 108, 255, .08);
+    }
+
+    to {
+        background: transparent;
+    }
+}
+
+.feed-new {
+    animation: newrow 0.8s ease;
+}
+
+/* ── Badges ── */
+.badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.b-blocked {
+    background: var(--red-dim);
+    color: #fca5a5;
+}
+
+.b-allowed {
+    background: var(--green-dim);
+    color: #4ade80;
+}
+
+.b-warning {
+    background: var(--amber-dim);
+    color: #fdba74;
+}
+
+.b-info {
+    background: #1e2a38;
+    color: #60a5fa;
+}
+
+/* ── Severity ── */
+.sev {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.sev-critical {
+    background: var(--red-dim);
+    color: #fca5a5;
+}
+
+.sev-high {
+    background: var(--amber-dim);
+    color: #fdba74;
+}
+
+.sev-medium {
+    background: #2c2a0a;
+    color: #fde68a;
+}
+
+.sev-low {
+    background: var(--green-dim);
+    color: #4ade80;
+}
+
+.sev-info {
+    background: var(--blue-dim);
+    color: #60a5fa;
+}
+
+/* ── Input ── */
+.inp {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 11px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s;
+}
+
+.inp:focus {
+    border-color: var(--blue);
+}
+
+.inp::placeholder {
+    color: var(--text4);
+}
+
+select.inp option {
+    background: var(--bg3);
+}
+
+/* ── Button ── */
+.btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 7px 13px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all .12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.btn-primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #1558cc;
+}
+
+/* ── Toggle ── */
+.toggle-wrap {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.toggle-wrap input {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.toggle-track {
+    position: absolute;
+    inset: 0;
+    background: #1e2a38;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: all .2s;
+}
+
+.toggle-thumb {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 2px;
+    left: 2px;
+    background: var(--text3);
+    border-radius: 50%;
+    transition: all .2s;
+}
+
+.toggle-wrap input:checked~.toggle-track {
+    background: rgba(26, 108, 255, .2);
+    border-color: var(--blue);
+}
+
+.toggle-wrap input:checked~.toggle-thumb {
+    left: 18px;
+    background: var(--blue);
+}

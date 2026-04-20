@@ -1,90 +1,55 @@
-// ============================================================
-//  middleware/auth.js — JWT Authentication Middleware
-//
-//  Protects private routes. Checks the Authorization header
-//  for a valid JWT token. Attaches the user to req.user.
-//
-//  Usage: Add "protect" to any route that needs login.
-//  Usage: Add "authorize('admin')" to restrict by role.
-// ============================================================
+// PATH: server/src/middleware/auth.js
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
 
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-
-// ============================================================
-//  protect — Verify JWT token
-//  Attach decoded user to req.user for downstream use
-// ============================================================
-const protect = async (req, res, next) => {
-    let token;
-
-    // Token should come in the Authorization header as:
-    // "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith("Bearer ")
-    ) {
-        token = req.headers.authorization.split(" ")[1];
-    }
-
-    // No token found → reject
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: "Not authorized. Please log in first.",
-        });
-    }
-
+// ── Protect: verify JWT token ─────────────────────────────────────────────────
+async function protect(req, res, next) {
     try {
-        // Verify token with our secret key
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Find user by ID stored inside the token
-        // We use select("+password") only when we need it — not here
-        const user = await User.findById(decoded.id);
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "User no longer exists.",
-            });
+        const header = req.headers.authorization
+        if (!header || !header.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, error: 'Not authenticated. Please login.' })
         }
 
-        if (!user.isActive) {
-            return res.status(401).json({
-                success: false,
-                message: "Your account has been deactivated.",
-            });
+        const token = header.split(' ')[1]
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'shieldwaf_dev_secret')
+
+        const user = await User.findById(decoded.id)
+        if (!user || !user.isActive) {
+            return res.status(401).json({ success: false, error: 'User not found or deactivated.' })
         }
 
-        // Attach user info to the request object
-        req.user = user;
-        next();
-
-    } catch (error) {
-        // Token is invalid or expired
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token. Please log in again.",
-        });
+        req.user = user
+        next()
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, error: 'Session expired. Please login again.' })
+        }
+        return res.status(401).json({ success: false, error: 'Invalid token.' })
     }
-};
+}
 
-// ============================================================
-//  authorize — Role-based access control
-//  Usage: authorize("admin", "analyst")
-//  Place AFTER protect middleware in route definitions
-// ============================================================
-const authorize = (...roles) => {
-    return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `Access denied. Requires one of: [${roles.join(", ")}] role.`,
-            });
+// ── Admin only ────────────────────────────────────────────────────────────────
+function adminOnly(req, res, next) {
+    if (req.user?.role !== 'admin') {
+        return res.status(403).json({ success: false, error: 'Admin access required.' })
+    }
+    next()
+}
+
+// ── Optional auth: attaches user if token present, doesn't block if not ──────
+async function optionalAuth(req, _res, next) {
+    try {
+        const header = req.headers.authorization
+        if (header && header.startsWith('Bearer ')) {
+            const token = header.split(' ')[1]
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'shieldwaf_dev_secret')
+            const user = await User.findById(decoded.id)
+            if (user) req.user = user
         }
-        next();
-    };
-};
+    } catch {
+        // silently ignore — user stays unauthenticated
+    }
+    next()
+}
 
-module.exports = { protect, authorize };
+module.exports = { protect, adminOnly, optionalAuth }

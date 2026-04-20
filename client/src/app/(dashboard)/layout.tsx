@@ -1,43 +1,71 @@
 // PATH: client/src/app/(dashboard)/layout.tsx
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from '@/components/Sidebar'
 import Navbar from '@/components/Navbar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const [open, setOpen] = useState(false)
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    // Close sidebar on route change (mobile)
+    useEffect(() => {
+        setSidebarOpen(false)
+    }, [])
 
     return (
-        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
+        <>
+            <style>{`
+        .dash-app { display: flex; height: 100vh; overflow: hidden; background: var(--bg); }
+        .dash-sidebar-overlay {
+          display: none; position: fixed; inset: 0; z-index: 30;
+          background: rgba(0,0,0,.65); backdrop-filter: blur(2px);
+        }
+        .dash-sidebar-wrap {
+          position: relative; z-index: 40; flex-shrink: 0;
+          transition: transform .22s cubic-bezier(.4,0,.2,1);
+        }
+        .dash-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .dash-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
 
-            {/* Mobile overlay */}
-            {open && (
+        /* Mobile */
+        @media (max-width: 1023px) {
+          .dash-sidebar-wrap {
+            position: fixed; top: 0; left: 0; bottom: 0;
+            transform: translateX(-100%);
+          }
+          .dash-sidebar-wrap.open { transform: translateX(0); }
+          .dash-sidebar-overlay.open { display: block; }
+        }
+
+        /* Tablet content padding */
+        @media (max-width: 768px) {
+          .dash-content { padding: 16px; }
+        }
+        @media (max-width: 480px) {
+          .dash-content { padding: 12px; }
+        }
+      `}</style>
+
+            <div className="dash-app">
+                {/* Overlay */}
                 <div
-                    onClick={() => setOpen(false)}
-                    style={{ position: 'fixed', inset: 0, zIndex: 30, background: 'rgba(0,0,0,.6)' }}
-                    className="lg:hidden"
+                    className={`dash-sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+                    onClick={() => setSidebarOpen(false)}
                 />
-            )}
 
-            {/* Sidebar */}
-            <div className={`
-        fixed inset-y-0 left-0 z-40 lg:relative lg:flex lg:flex-col
-        transition-transform duration-200
-        ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-                <Sidebar onClose={() => setOpen(false)} />
-            </div>
+                {/* Sidebar */}
+                <div className={`dash-sidebar-wrap ${sidebarOpen ? 'open' : ''}`}>
+                    <Sidebar onClose={() => setSidebarOpen(false)} />
+                </div>
 
-            {/* Main */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-                <Navbar onMenuClick={() => setOpen(true)} />
-                <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', padding: '20px 24px' }}>
-                    <div className="animate-fadein">
-                        {children}
+                {/* Main */}
+                <div className="dash-main">
+                    <Navbar onMenuClick={() => setSidebarOpen(v => !v)} />
+                    <div className="dash-content">
+                        <div className="animate-fadein">{children}</div>
                     </div>
-                </main>
+                </div>
             </div>
-
-        </div>
+        </>
     )
 }

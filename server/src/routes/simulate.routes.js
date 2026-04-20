@@ -1,23 +1,29 @@
-/**
- * routes/simulate.routes.js
- * GET  /api/simulate/presets        — list built-in presets
- * POST /api/simulate/preset/:preset — run a named preset
- * POST /api/simulate/attack         — test a single payload
- * POST /api/simulate/batch          — test all presets at once
- */
+// const router  = require('express').Router();
+// const { protect } = require('../middleware/auth');
+// const {
+//     simulateSingle,
+//     simulatePreset,
+//     simulateBatch,
+//     getPresets,
+// } = require('../controllers/simulate.controller');
 
-const router  = require('express').Router();
-const { protect } = require('../middleware/auth');
-const {
-    simulateSingle,
-    simulatePreset,
-    simulateBatch,
-    getPresets,
-} = require('../controllers/simulate.controller');
+// router.get ('/presets',          protect, getPresets);
+// router.post('/preset/:preset',   protect, simulatePreset);
+// router.post('/attack',           protect, simulateSingle);
+// router.post('/batch',            protect, simulateBatch);
 
-router.get ('/presets',          protect, getPresets);
-router.post('/preset/:preset',   protect, simulatePreset);
-router.post('/attack',           protect, simulateSingle);
-router.post('/batch',            protect, simulateBatch);
+// module.exports = router;
 
-module.exports = router;
+
+
+
+// PATH: server/src/routes/simulate.routes.js
+const router = require('express').Router()
+const { runSimulation } = require('../controllers/simulate.controller')
+const { optionalAuth }  = require('../middleware/auth')
+const { simulateLimiter } = require('../middleware/rateLimit')
+
+// optionalAuth: logged-in users get full results, guests get limited results
+router.post('/', simulateLimiter, optionalAuth, runSimulation)
+
+module.exports = router

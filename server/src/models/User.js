@@ -1,87 +1,103 @@
-// ============================================================
-//  User.js — User Model
-//
-//  Stores admin/operator accounts who can log into ShieldWAF.
-//  Passwords are hashed using bcrypt before saving.
-// ============================================================
+// // PATH: server/src/models/User.js
+// const mongoose = require('mongoose')
+// const bcrypt = require('bcryptjs')
 
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+// const UserSchema = new mongoose.Schema({
+//     name: {
+//         type: String,
+//         required: [true, 'Name is required'],
+//         trim: true,
+//         maxlength: [60, 'Name too long'],
+//     },
+//     email: {
+//         type: String,
+//         required: [true, 'Email is required'],
+//         unique: true,
+//         lowercase: true,
+//         trim: true,
+//         match: [/^\S+@\S+\.\S+$/, 'Invalid email format'],
+//     },
+//     password: {
+//         type: String,
+//         required: [true, 'Password is required'],
+//         minlength: [6, 'Password must be at least 6 characters'],
+//         select: false, // never returned in queries by default
+//     },
+//     role: {
+//         type: String,
+//         enum: ['admin', 'user'],
+//         default: 'user',
+//     },
+//     avatar: {
+//         type: String,
+//         default: '',
+//     },
+//     isActive: {
+//         type: Boolean,
+//         default: true,
+//     },
+// }, { timestamps: true })
 
-const UserSchema = new mongoose.Schema(
+// // ── Hash password before save ────────────────────────────────────────────────
+// UserSchema.pre('save', async function (next) {
+//     if (!this.isModified('password')) return next()
+//     this.password = await bcrypt.hash(this.password, 12)
+//     next()
+// })
+
+// // ── Compare password method ───────────────────────────────────────────────────
+// UserSchema.methods.comparePassword = function (candidate) {
+//     return bcrypt.compare(candidate, this.password)
+// }
+
+// // ── Strip password from JSON output ──────────────────────────────────────────
+// UserSchema.set('toJSON', {
+//     transform: (_doc, ret) => {
+//         delete ret.password
+//         return ret
+//     },
+// })
+
+// module.exports = mongoose.model('User', UserSchema)
+
+
+
+const mongoose = require('mongoose')
+
+const userSchema = new mongoose.Schema(
     {
-        // ---- Identity ----
-        username: {
+        name: {
             type: String,
-            required: [true, "Username is required"],
-            unique: true,
+            required: [true, 'Name is required'],
             trim: true,
-            minlength: [3, "Username must be at least 3 characters"],
-            maxlength: [30, "Username cannot exceed 30 characters"],
+            maxlength: [80, 'Name cannot exceed 80 characters'],
         },
-
         email: {
             type: String,
-            required: [true, "Email is required"],
+            required: [true, 'Email is required'],
             unique: true,
             lowercase: true,
             trim: true,
-            match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
+            match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
         },
-
         password: {
             type: String,
-            required: [true, "Password is required"],
-            minlength: [6, "Password must be at least 6 characters"],
+            required: [true, 'Password is required'],
+            minlength: [6, 'Password must be at least 6 characters'],
             select: false, // Never return password in queries by default
         },
-
-        // ---- Role-based access ----
         role: {
             type: String,
-            enum: ["admin", "analyst", "viewer"],
-            default: "viewer",
-            // admin   → full access (manage rules, block IPs, view all)
-            // analyst → view logs, run simulator
-            // viewer  → read-only dashboard
-        },
-
-        // ---- Status ----
-        isActive: {
-            type: Boolean,
-            default: true,
-        },
-
-        lastLogin: {
-            type: Date,
+            enum: ['user', 'admin'],
+            default: 'user',
         },
     },
     {
-        // Automatically adds createdAt and updatedAt fields
-        timestamps: true,
+        timestamps: true, // adds createdAt and updatedAt
     }
-);
+)
 
-// ============================================================
-//  MIDDLEWARE: Hash password before saving
-//  Only runs if the password field was actually changed
-// ============================================================
-UserSchema.pre("save", async function (next) {
-    // Skip hashing if password wasn't modified (e.g. role update)
-    if (!this.isModified("password")) return next();
+// Index for faster email lookups
+userSchema.index({ email: 1 })
 
-    // Salt rounds: 12 is a good balance of security vs speed
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-});
-
-// ============================================================
-//  METHOD: Compare entered password with stored hash
-//  Usage: const isMatch = await user.comparePassword("myPass123")
-// ============================================================
-UserSchema.methods.comparePassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
-};
-
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', userSchema)

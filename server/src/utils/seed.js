@@ -7,19 +7,19 @@ const Log = require('../models/Log')
 const { DEFAULT_RULES } = require('../config/rules')
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/shieldwaf'
-const ADMIN_EMAIL = process.env.SEED_EMAIL || 'admin@shieldwaf.io'
-const ADMIN_PASSWORD = process.env.SEED_PASSWORD || 'password123'
+const ADMIN_EMAIL = process.env.SEED_EMAIL || 'rahull123@gmail.com'
+const ADMIN_PASSWORD = process.env.SEED_PASSWORD || 'rahull@123'
 
 const SAMPLE_IPS = [
-    { ip: '185.220.101.4', country: 'Russia', flag: '🇷🇺', code: 'RU' },
-    { ip: '103.21.244.0', country: 'China', flag: '🇨🇳', code: 'CN' },
-    { ip: '91.108.4.116', country: 'USA', flag: '🇺🇸', code: 'US' },
-    { ip: '178.62.55.19', country: 'Germany', flag: '🇩🇪', code: 'DE' },
-    { ip: '104.21.19.81', country: 'Brazil', flag: '🇧🇷', code: 'BR' },
-    { ip: '5.188.10.51', country: 'Netherlands', flag: '🇳🇱', code: 'NL' },
-    { ip: '172.16.0.45', country: 'India', flag: '🇮🇳', code: 'IN' },
-    { ip: '45.155.205.4', country: 'Russia', flag: '🇷🇺', code: 'RU' },
-    { ip: '8.8.8.8', country: 'USA', flag: '🇺🇸', code: 'US' },
+    { ip: '185.220.101.4', country: 'Russia', code: 'RU' },
+    { ip: '103.21.244.0', country: 'China', code: 'CN' },
+    { ip: '91.108.4.116', country: 'USA', code: 'US' },
+    { ip: '178.62.55.19', country: 'Germany', code: 'DE' },
+    { ip: '104.21.19.81', country: 'Brazil', code: 'BR' },
+    { ip: '5.188.10.51', country: 'Netherlands', code: 'NL' },
+    { ip: '172.16.0.45', country: 'India', code: 'IN' },
+    { ip: '45.155.205.4', country: 'Russia', code: 'RU' },
+    { ip: '8.8.8.8', country: 'USA', code: 'US' },
 ]
 
 const ATTACK_SAMPLES = [
@@ -55,7 +55,7 @@ async function seed() {
         // IMPORTANT: pass plain text — User model's pre("save") hook hashes it automatically
         console.log('Creating admin user...')
         await User.create({
-            name: 'Admin User',
+            name: 'Admin',
             email: ADMIN_EMAIL,
             password: ADMIN_PASSWORD,
             role: 'admin',

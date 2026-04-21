@@ -12,15 +12,15 @@ export default function LoginPage() {
     const { login, register } = useAuth()
     const [tab, setTab] = useState<Tab>('login')
     const [name, setName] = useState('')
-    const [email, setEmail] = useState('admin@shieldwaf.io')
-    const [password, setPassword] = useState('password123')
+    const [email, setEmail] = useState('rahull123@gmail.com')
+    const [password, setPassword] = useState('rahull@123')
     const [confirm, setConfirm] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
     const switchTab = (t: Tab) => {
         setTab(t); setError('')
-        if (t === 'login') { setEmail('admin@shieldwaf.io'); setPassword('password123') }
+        if (t === 'login') { setEmail('rahull123@gmail.com'); setPassword('rahull@123') }
         else { setEmail(''); setPassword('') }
     }
 

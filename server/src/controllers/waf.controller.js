@@ -1,14 +1,3 @@
-/**
- * controllers/waf.controller.js — WAF Rules & Block Management
- * =============================================================
- * Handles all admin operations for:
- *  - Viewing / toggling / updating WAF detection rules
- *  - Blocking / unblocking IPs
- *  - Viewing threat logs with filters & pagination
- *  - Triggering AI analysis on a specific log entry
- *  - Dashboard stats (counts, top threats, etc.)
- */
-
 const Rule = require('../models/Rule');
 const BlockIP = require('../models/BlockIP');
 const Log = require('../models/Log');
@@ -18,10 +7,6 @@ const { analyzeThreat } = require('../services/ai.service');
 
 // ─── Rule Management ──────────────────────────────────────────────────────────
 
-/**
- * GET /api/waf/rules
- * Returns all rules (from DB; seeds defaults if DB is empty)
- */
 exports.getRules = async (req, res) => {
     try {
         let rules = await Rule.find().sort({ ruleId: 1 });
@@ -37,11 +22,6 @@ exports.getRules = async (req, res) => {
     }
 };
 
-/**
- * PATCH /api/waf/rules/:id
- * Update a rule (toggle enabled, change action, etc.)
- * Body: { enabled?, action?, name?, description? }
- */
 exports.updateRule = async (req, res) => {
     try {
         const allowedFields = ['enabled', 'action', 'name', 'description'];
@@ -66,10 +46,6 @@ exports.updateRule = async (req, res) => {
     }
 };
 
-/**
- * POST /api/waf/rules/reset
- * Re-seed all rules back to defaults (useful for demo / reset)
- */
 exports.resetRules = async (req, res) => {
     try {
         await Rule.deleteMany({});
@@ -83,10 +59,6 @@ exports.resetRules = async (req, res) => {
 
 // ─── IP Block Management ──────────────────────────────────────────────────────
 
-/**
- * GET /api/waf/blocked-ips
- * List all blocked IPs (active only by default, or ?all=true)
- */
 exports.getBlockedIPs = async (req, res) => {
     try {
         const query =
@@ -107,11 +79,6 @@ exports.getBlockedIPs = async (req, res) => {
     }
 };
 
-/**
- * POST /api/waf/blocked-ips
- * Block an IP address
- * Body: { ip, reason?, durationMinutes? (null = permanent) }
- */
 exports.blockIP = async (req, res) => {
     try {
         const { ip, reason = 'Manual block', durationMinutes } = req.body;
@@ -152,10 +119,6 @@ exports.blockIP = async (req, res) => {
     }
 };
 
-/**
- * DELETE /api/waf/blocked-ips/:id
- * Unblock an IP by its MongoDB document ID
- */
 exports.unblockIP = async (req, res) => {
     try {
         const blocked = await BlockIP.findByIdAndDelete(req.params.id);
@@ -172,19 +135,6 @@ exports.unblockIP = async (req, res) => {
 
 // ─── Log Viewer ───────────────────────────────────────────────────────────────
 
-/**
- * GET /api/waf/logs
- * Paginated, filterable threat log
- *
- * Query params:
- *  - page     (default: 1)
- *  - limit    (default: 20, max: 100)
- *  - severity (critical | high | medium | low)
- *  - type     (sqli | xss | cmdi | ...)
- *  - ip       (filter by source IP)
- *  - from     (ISO date string)
- *  - to       (ISO date string)
- */
 exports.getLogs = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -222,10 +172,7 @@ exports.getLogs = async (req, res) => {
     }
 };
 
-/**
- * DELETE /api/waf/logs
- * Clear all logs (admin only — useful for demo resets)
- */
+
 exports.clearLogs = async (req, res) => {
     try {
         const result = await Log.deleteMany({});
@@ -237,11 +184,6 @@ exports.clearLogs = async (req, res) => {
 
 // ─── AI Analysis ─────────────────────────────────────────────────────────────
 
-/**
- * POST /api/waf/analyze/:logId
- * Runs AI analysis on a specific log entry.
- * Returns a natural-language explanation of the threat.
- */
 exports.analyzeLog = async (req, res) => {
     try {
         const log = await Log.findById(req.params.logId).lean();
@@ -256,15 +198,6 @@ exports.analyzeLog = async (req, res) => {
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
-/**
- * GET /api/waf/stats
- * Returns aggregated metrics for the dashboard:
- *  - Total threats today, this week, all time
- *  - Threats by severity
- *  - Top threat types
- *  - Top attacking IPs
- *  - Requests per hour (last 24h)
- */
 exports.getStats = async (req, res) => {
     try {
         const now = new Date();

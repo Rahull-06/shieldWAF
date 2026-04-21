@@ -1,78 +1,93 @@
 // PATH: client/src/components/MetricCard.tsx
 'use client'
 
-interface Props {
-    label: string
-    value: string | number
-    change: string
-    changeType: 'good' | 'bad' | 'neutral'
-    color: 'blue' | 'red' | 'green' | 'amber'
-    icon: string
+interface MetricCardProps {
+    label:      string
+    value:      string
+    sub?:       string
+    accent?:    string
+    icon?:      string
     sparkData?: number[]
+    isDemo?:    boolean
 }
 
-const COLORS = {
-    blue: '#1a6cff',
-    red: '#ef4444',
-    green: '#22c55e',
-    amber: '#f59e0b',
-}
-
-export default function MetricCard({ label, value, change, changeType, color, icon, sparkData = [] }: Props) {
-    const c = COLORS[color]
+export default function MetricCard({
+    label,
+    value,
+    sub,
+    accent = '#1a6cff',
+    icon,
+    sparkData = [],
+    isDemo = false,
+}: MetricCardProps) {
     const max = Math.max(...sparkData, 1)
 
     return (
-        <div
-            style={{
-                background: 'var(--bg2)',
-                border: '1px solid var(--border)',
-                borderRadius: 10, padding: 16,
-                position: 'relative', overflow: 'hidden',
-                transition: 'border-color .15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border2)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-            {/* Top accent bar */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: c }} />
+        <>
+            <style>{`
+                .mc {
+                    background: var(--bg2);
+                    border: 1px solid var(--border);
+                    border-radius: 11px;
+                    overflow: hidden;
+                    transition: border-color 0.2s, transform 0.2s;
+                    cursor: default;
+                }
+                .mc:hover {
+                    border-color: var(--mc-accent, #1a6cff) !important;
+                    transform: translateY(-2px);
+                }
+                .mc-body { padding: 14px 15px 13px; }
+                .mc-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+                .mc-label { font-size: 11.5px; color: var(--text2); font-weight: 500; line-height: 1.3; }
+                .mc-val   { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -.5px; line-height: 1; margin-bottom: 4px; }
+                .mc-sub   { font-size: 11px; color: var(--text3); }
+                .mc-spark { display: flex; align-items: flex-end; gap: 2px; height: 24px; margin-top: 10px; }
+                .mc-bar   { flex: 1; border-radius: 2px; min-height: 3px; }
+                .mc-badge { font-size: 9px; font-weight: 700; letter-spacing: .5px; color: #1a6cff; background: #0d1f40; border: 1px solid #1a6cff22; padding: 2px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
 
-            {/* Ghost icon */}
-            <div style={{ position: 'absolute', right: 14, top: 14, fontSize: 22, opacity: .1 }}>{icon}</div>
+                @media (max-width: 380px) {
+                    .mc-val   { font-size: 20px; }
+                    .mc-label { font-size: 11px; }
+                    .mc-body  { padding: 12px 12px 11px; }
+                }
+            `}</style>
+            <div
+                className="mc"
+                style={{ '--mc-accent': accent } as React.CSSProperties}
+            >
+                {/* Accent top bar */}
+                <div style={{ height: '3px', background: accent }} />
 
-            {/* Label */}
-            <div style={{ fontSize: 10.5, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 8, fontWeight: 500 }}>
-                {label}
-            </div>
+                <div className="mc-body">
+                    <div className="mc-top">
+                        <span className="mc-label">{label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {isDemo && <span className="mc-badge">DEMO</span>}
+                            {icon && <span style={{ fontSize: '15px' }}>{icon}</span>}
+                        </div>
+                    </div>
 
-            {/* Value */}
-            <div style={{ fontSize: 26, fontWeight: 600, color: '#f1f5f9', letterSpacing: -1, lineHeight: 1 }}>
-                {value}
-            </div>
+                    <div className="mc-val">{value}</div>
+                    {sub && <div className="mc-sub">{sub}</div>}
 
-            {/* Change */}
-            <div style={{
-                fontSize: 11, marginTop: 5,
-                color: changeType === 'good' ? 'var(--green)' : changeType === 'bad' ? 'var(--red)' : 'var(--text3)',
-            }}>
-                {change}
-            </div>
-
-            {/* Sparkbar */}
-            {sparkData.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 24, marginTop: 8 }}>
-                    {sparkData.map((v, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                flex: 1, borderRadius: '2px 2px 0 0',
-                                height: `${Math.max(15, (v / max) * 100)}%`,
-                                background: c, opacity: .55,
-                            }}
-                        />
-                    ))}
+                    {sparkData.length > 0 && (
+                        <div className="mc-spark">
+                            {sparkData.map((v, i) => (
+                                <div
+                                    key={i}
+                                    className="mc-bar"
+                                    style={{
+                                        height: `${Math.max(12, (v / max) * 100)}%`,
+                                        background: accent,
+                                        opacity: 0.25 + (i / sparkData.length) * 0.75,
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+            </div>
+        </>
     )
 }

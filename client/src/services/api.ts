@@ -3,8 +3,7 @@ import type {
     ApiResponse, LogEntry, WafRule, PaginatedResponse,
     MetricsSummary, TrafficPoint, ThreatBreakdown, GeoEntry, SimResult,
 } from '@/types'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+import { API_BASE } from '@/config/api'
 
 // ── Core fetch wrapper ────────────────────────────────────────────────────────
 async function request<T>(
@@ -18,7 +17,7 @@ async function request<T>(
         ...(options.headers as Record<string, string> || {}),
     }
     try {
-        const res = await fetch(`${BASE}${path}`, { ...options, headers })
+        const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
         const data = await res.json()
         if (!res.ok) return { success: false, error: data.message || data.error || 'Request failed' }
         return { success: true, data: data.data ?? data }
@@ -26,6 +25,8 @@ async function request<T>(
         return { success: false, error: 'Network error — is the server running?' }
     }
 }
+
+export default request
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {

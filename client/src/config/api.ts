@@ -1,0 +1,2 @@
+// PATH: client/src/config/api.ts
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL as string;

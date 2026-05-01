@@ -16,13 +16,28 @@ const app = express()
 
 // ── Security & Parsing ──────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }))
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+].filter(Boolean)
+
+app.set('trust proxy', 1)
+
 app.use(cors({
-    origin: [
-        process.env.CLIENT_URL || 'http://localhost:3000',
-        'http://localhost:3001',
-    ],
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true) // Postman
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true)
+        }
+
+        return callback(new Error('❌ Not allowed by CORS'))
+    },
     credentials: true,
 }))
+
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
 
@@ -34,7 +49,7 @@ if (process.env.NODE_ENV !== 'production') {
 // ── Global rate limiter ─────────────────────────────────────────────────────
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
-    max: 500,
+    max: 100,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'Too many requests, please try again later.' },
@@ -49,8 +64,13 @@ app.use('/api/metrics', metricsRoutes)
 app.use('/api/simulate', simulateRoutes)
 app.use('/api/block', blockRoutes)
 
+
+app.get('/', (_req, res) => {
+    res.send('ShieldWAF API running 🚀')
+})
+
 // ── Health check ─────────────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         status: 'ok',

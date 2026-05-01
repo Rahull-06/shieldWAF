@@ -13,14 +13,19 @@ function signToken(userId, role) {
 exports.register = async (req, res) => {
     try {
         const { name, email, password } = req.body
-        if (!name || !email || !password)
-            return res.status(400).json({ message: 'Name, email and password are required.' })
-        if (password.length < 6)
-            return res.status(400).json({ message: 'Password must be at least 6 characters.' })
-        const existing = await User.findOne({ email: email.toLowerCase().trim() })
+        const searchEmail = email.toLowerCase().trim()
+        
+        // ADD THIS DEBUG LINE
+        console.log('[register] checking email:', searchEmail)
+        
+        const existing = await User.findOne({ email: searchEmail })
+        
+        // ADD THIS TOO
+        console.log('[register] existing user found:', existing ? existing.email : 'NONE')
+        
         if (existing)
             return res.status(409).json({ message: 'An account with this email already exists.' })
-
+        // ... rest of code
         // password is plain text here — User model pre('save') hashes it automatically
         const user = await User.create({ name: name.trim(), email: email.toLowerCase().trim(), password, role: 'user' })
         const token = signToken(user._id, user.role)

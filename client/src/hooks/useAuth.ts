@@ -48,6 +48,7 @@ export function useAuth() {
     const logout = useCallback(() => {
         localStorage.removeItem('token')
         setUser(null)
+        window.location.replace('/')
     }, [])
 
     const updateUser = useCallback((updates: Partial<AuthUser>) => {
